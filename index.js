@@ -31,6 +31,9 @@ export default class TransitEditorLayer extends L.LayerGroup {
       throw new Error('allegedly parallel control point and coordinate arrays are not the same length!')
     }
 
+    // state: what segment is currently being dragged
+    this.draggingSegment = -1
+
     this.controlPoints = controlPoints
 
     this.segments = []
@@ -53,7 +56,7 @@ export default class TransitEditorLayer extends L.LayerGroup {
         // include the last coordinate in the string so it goes all the way to the control point
         let segment = linestring(geometry.coordinates.slice(startCoordIdx, coordIdx + 1))
         this.segments.push(segment)
-        let segmentLayer = L.geoJson(segment)
+        let segmentLayer = this.getSegmentLayer(segment)
         this.segmentLayers.push(segmentLayer)
         this.addLayer(segmentLayer)
 
@@ -64,6 +67,8 @@ export default class TransitEditorLayer extends L.LayerGroup {
 
     this.handleMapClick = this.handleMapClick.bind(this)
     this.handleDragEnd = this.handleDragEnd.bind(this)
+    this.handleMouseDown = this.handleMouseDown.bind(this)
+    this.handleMouseUp = this.handleMouseUp.bind(this)
   }
 
   addTo (map) {
@@ -72,10 +77,14 @@ export default class TransitEditorLayer extends L.LayerGroup {
 
     // add an event listener for appending to the path
     this.map.on('click', this.handleMapClick)
+    this.map.on('mouseup', this.handleMouseUp)
   }
 
   /** handle a click on the map */
   handleMapClick (e) {
+    // don't handle map clicks when dragging
+    if (this.draggingSegment >= 0) return
+
     // first or second stop
     let coord = [e.latlng.lng, e.latlng.lat]
     let marker = this.getMarker(coord, true)
@@ -86,7 +95,7 @@ export default class TransitEditorLayer extends L.LayerGroup {
       let prevLatLng = this.markers[this.markers.length - 2].getLatLng()
       let prevCoord = [prevLatLng.lng, prevLatLng.lat]
       let segment = this.getSegment(prevCoord, coord)
-      let segmentLayer = L.geoJson(segment)
+      let segmentLayer = this.getSegmentLayer(segment)
 
       this.addLayer(segmentLayer)
 
@@ -100,6 +109,52 @@ export default class TransitEditorLayer extends L.LayerGroup {
     }
     // if this is the first click, it is a control point.
     else this.controlPoints.push(true)
+  }
+
+  /** handle a mousedown (drag start) on a segment */
+  handleMouseDown (segment, e) {
+    // we search now instead of just passing in an index, in case segments have been added/deleted since the event handler was registered
+    this.draggingSegment = this.segments.indexOf(segment)
+
+    if (this.draggingSegment < 0) console.warn('dragging segment not on map (perhaps events were not cleared?)')
+  }
+
+  /** handle a mouseup event */
+  handleMouseUp (e) {
+    // if we're not dragging a line segment, ignore
+    if (this.draggingSegment < 0) return
+
+    let coord = [e.latlng.lng, e.latlng.lat]
+    let prevLatLng = this.markers[this.draggingSegment].getLatLng()
+    let prevCoord = [prevLatLng.lng, prevLatLng.lat]
+
+    // markers are always one item longer than segments, no need to be concerned about overflow here
+    let nextLatLng = this.markers[this.draggingSegment + 1].getLatLng()
+    let nextCoord = [nextLatLng.lng, nextLatLng.lat]
+
+    // create the new marker and segments
+    let marker = this.getMarker(coord)
+
+    let s0 = this.getSegment(prevCoord, coord)
+    let s1 = this.getSegment(coord, nextCoord)
+    let l0 = this.getSegmentLayer(s0)
+    let l1 = this.getSegmentLayer(s1)
+
+    // add them to the map and splice them in
+    this.addLayer(marker)
+
+    // splice marker *after* begin marker (i.e. at position of current end marker for dragged segment)
+    this.markers.splice(this.draggingSegment + 1, 0, marker)
+    this.addLayer(l0)
+    this.addLayer(l1)
+    
+    // remove old segment and add two new
+    // insert two new segments *in place of* existing segment
+    this.segments.splice(this.draggingSegment, 1, s0, s1)
+    let oldSegLayer = this.segmentLayers.splice(this.draggingSegment, 1, l0, l1)
+    this.removeLayer(oldSegLayer[0])
+
+    this.draggingSegment = -1
   }
 
   /** handle dragging a marker */
@@ -122,7 +177,7 @@ export default class TransitEditorLayer extends L.LayerGroup {
       let segment = this.getSegment([prevLatLng.lng, prevLatLng.lat], [latLng.lng, latLng.lat])
       this.segments[idx - 1] = segment
       this.removeLayer(this.segmentLayers[idx - 1])
-      let segmentLayer = L.geoJson(segment)
+      let segmentLayer = this.getSegmentLayer(segment)
       this.segmentLayers[idx - 1] = segmentLayer
       this.addLayer(segmentLayer)
     }
@@ -132,7 +187,7 @@ export default class TransitEditorLayer extends L.LayerGroup {
       let segment = this.getSegment([latLng.lng, latLng.lat], [nextLatLng.lng, nextLatLng.lat])
       this.segments[idx] = segment
       this.removeLayer(this.segmentLayers[idx])
-      let segmentLayer = L.geoJson(segment)
+      let segmentLayer = this.getSegmentLayer(segment)
       this.segmentLayers[idx] = segmentLayer
       this.addLayer(segmentLayer)
     }
@@ -150,6 +205,13 @@ export default class TransitEditorLayer extends L.LayerGroup {
   getSegment (prevCoord, coord) {
     // for now just returning straight-line, eventually we will have the option to also use street geometries
     return linestring([prevCoord, coord])
+  }
+
+  /** convert a segment to a segment layer */
+  getSegmentLayer (segment) {
+    let layer = L.geoJson(segment)
+    layer.getLayers()[0].on('mousedown', this.handleMouseDown.bind(this, segment))
+    return layer
   }
 
   /** return the geometry of the modification, as well as the stop and control point indices */
