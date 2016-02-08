@@ -34,7 +34,9 @@
     "browserify": "^12.0.1"
   },
   "dependencies": {
-    "leaflet": "^0.7.7",
     "turf-linestring": "^1.0.2"
+  },
+  "peerDependencies": {
+    "leaflet": "^0.7.7"
   }
 }

@@ -19,32 +19,22 @@ const controlPointIcon = L.icon({
   iconAnchor: [12, 12]
 })
 
-/** circle-in-circle marker for stops */
-const stopIcon = L.icon({
-  iconUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4AEWEDkssvjS+AAAAB1pVFh0Q29tbWVudAAAAAAAQ3JlYXRlZCB3aXRoIEdJTVBkLmUHAAACQElEQVRIx72VPWgTcRjGf+/fXh1irtBP6VAxFGOHBAq6dRNxcKqLbsYG6mAEN0GCgwShm2AFKbSNmy52chBx62ax0AylUiN2KPQTek0He+Veh0v1Lh82CdgHDo7L+zxP3v/78RfqIJZTillBVSWWY3R7naF9Bytq43b3s1zMMiciehxXD1JP2M7oPe+Ix6U94qFo/Rt7roMV08aEMymz9YxM1QdDwkrpprPDTMkhjpSFJWBSfkoOcWeHGSulm8aQODGDzkd6d3eDPPUzrg+Fzj5Suy/kTU2DE8Vd4Kj83gZYjZlILKcYQ2K1wFJNcYWnt+B6AkbK1ZhfgU8FePa+RhUVBhMkPY9CMSv+z1ZKN91DekKBR3B7BN4+/PfJ3HkJ7+bLWZVhtbPl5qUXQOyMjjk7TIf+iQcPbsBkqrHjz+Th1cdAyyjYXYx1n2dWIvf168E+w0HClYvwJddcja9mYeFHoIVtVkqv5bI5cMLiHML0ePNNND3uc49R2iOuqmIqi2R3QHKgeYPkgM8NDy2jVYN2c5iWUcndXmeoymCwr3WDEFdg38GqMljdaN0gxFWI2rhVBh8WWzeo5Hb3s2yC2xHA2YOltebFl9Z8bhDFLHMmYhP2bYf0VPMG6SmfG1zlIqLmjMVkZRYL3/3pbBSZvM8Jnr9pYyKW01PYRaeyTf/rfXBqN9qfaXyuiZ/f+Oz+oqchIwXrLFsXLnFt9YkUTrz0PY+Cm5deu4t0JMpiZYcFhSNRFu0u0m5eej2PQq2w35GC9O8BIx5RAAAAAElFTkSuQmCC',
-  iconRetinaUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4AEWEDkfDSiz7gAAAB1pVFh0Q29tbWVudAAAAAAAQ3JlYXRlZCB3aXRoIEdJTVBkLmUHAAAD0klEQVRo3t2aQUtbWRSAv/fSxFelNEhVpAWnTTJ5GJztdJFaKLgtXVUQ7Q+oxYXDZKjjUi1ksIuAsy6dQRhX0q20oHVRt4aEhNhOByxSlcFStE9Dcrt4kxKjybsvJs9kzi7Jyz3nu+fcc+8950GTi3LWAfSo8ORy3Mwectcw6Df28X/Z5/LRESqAx0P+YhuftDY2NI0VdwsvXC7epCLK0bkB6FGhZrMMfd5jcvsDwWrG6LxK+pKXKbeb+VREyTsCoEeFxzhg5p8NfhL5GoWACj1+ZrVWJqrxijTAjSnx8O8Uc7Uy/DSQ6zqj7yaV32sKoEfFlX93WK02VKoJrfYOwqmIsntmgMAT0b+RYLles17JG/4QtzOPlRWrZ9VyP/imxXAm7rzxACIPmTjLvmkxXJUHfNNi+G2CPxohz/tCjLz9VflTGiDwRPRn4iw30mYV6CsfTkrpgk2vs1Nt2HR74VYQBvogHITvrpjfv9+F1TQsxeF1Grb27K+J4A90nLawjwF0/ixSdrONAtwJQewB9F6T+09yE8aew6sECBvZafs3RS8LcGNKPHyXZM6Wa7tgcVze8NNA7j2FzEfJvaj35D6hFHbY9DqHdkLn/o/w11htYnwwBgtr0qHUUrxjqwDGATN2jB8dqJ3xYI41OiCXXo0DZo5B6VGhptfJyQLUcuar8cR/XnAVDoBqNsuQrPGBrvoZX/BEoMvaC9ksQ99C6PMek7LZZnG8/jl/cdz6gFZssyqbNu+Eqs82dqT3mqmrkmx/IKhHhafiWahUYg+c23lldOVy3JQG6PY6M/vFXuj2Vn4me8hdaYBbQRwXK52GQb80wECf8wBWOo19/NIA4XPwgJXOL/tclgYonCqdFCudhbKNSpOLFMD7XecNs9Lp8ZCXBlhNOw9gpfNiG5+kAZbizgNY6dTa2JAGeH0OHrDSqWmsSANs7Zm3J6ckuWl9b3a38MJWFhp77hyAjC6XizcAaudVpALkVcIZLyQ3TV1WF/zCtVK95GVKZmCBeQGvt9x7al2pKLZZdbuZVyQDKfPRvPbVSwZj1hUKRQW3m/lvAKmIku/xMyurZGENHj2rvfGPnslVJnr8zBY3RFQArZUJxcahYm6ptp4YjJljypRVtFYmThwlUhHl6LrOqB2lC2vw/fjZFnZy0xxDZubBbICUdnGavrR4ofhDewfhnS17xV0BvExA6Jf6FnfbOwhvl5nA47WfJiuvn1i6mcfKii/ESKMY7wsxUqnVVLaG1AhdGqvuTEWAQjg1epPv/91mLZambXSXeKN5XzUoAWmYlz2+AuTyoRli++xMAAAAAElFTkSuQmCC',
-  iconSize: [24, 24],
-  iconAnchor: [12, 12]
-})
-
 export default class TransitEditorLayer extends L.LayerGroup {
   /**
    * construct with a GeoJSON geometry and a list of which coordinates are stops.
    * Optionally, also specify which coordinates are control points.
    */
-  constructor ({ geometry, stops, controlPoints = null }) {
+  constructor ({ geometry, controlPoints, stopPoints }) {
     super()
-    if (controlPoints == null) controlPoints = stops
-
-    if (geometry.coordinates.length !== stops.length || stops.length !== controlPoints.length) {
-      console.log('allegedly parallel stop, control point and coordinate arrays are not the same length!')
-      throw new Error('allegedly parallel stop, control point and coordinate arrays are not the same length!')
+    if (geometry.coordinates.length !== controlPoints.length) {
+      console.log('allegedly parallel control point and coordinate arrays are not the same length!')
+      throw new Error('allegedly parallel control point and coordinate arrays are not the same length!')
     }
+
+    this.controlPoints = controlPoints
 
     this.segments = []
     this.segmentLayers = []
-    // is the beginning of this segment a stop?
-    this.stops = []
     this.markers = []
 
     if (geometry.coordinates.length > 0) {
@@ -53,8 +43,8 @@ export default class TransitEditorLayer extends L.LayerGroup {
       let startCoordIdx = 0
 
       // add the first marker
-      this.stops.push(stops[0])
-      this.markers.push(this.getMarker(geometry.coordinates[0], stops[0]))
+      let marker = this.getMarker(geometry.coordinates[0])
+      this.markers.push(marker)
 
       // split up the geometry into constituent pieces
       while (coordIdx < this.controlPoints.length) {
@@ -63,15 +53,13 @@ export default class TransitEditorLayer extends L.LayerGroup {
         // include the last coordinate in the string so it goes all the way to the control point
         let segment = linestring(geometry.coordinates.slice(startCoordIdx, coordIdx + 1))
         this.segments.push(segment)
-        this.segmentLayers.push(L.geoJson(segment))
+        let segmentLayer = L.geoJson(segment)
+        this.segmentLayers.push(segmentLayer)
+        this.addLayer(segmentLayer)
 
         // add the stop marker at the end of this segment
-        this.stops.push(stops[coordIdx])
-        this.markers.push(this.getMarker(geometry.getMarker(geometry.coordinates[coordIdx], stops[coordIdx])))
+        this.markers.push(this.getMarker(geometry.getMarker(geometry.coordinates[coordIdx])))
       }
-
-      this.segmentLayers.forEach(this.addLayer)
-      this.markers.forEach(this.addLayer)
     }
 
     this.handleMapClick = this.handleMapClick.bind(this)
@@ -90,7 +78,6 @@ export default class TransitEditorLayer extends L.LayerGroup {
   handleMapClick (e) {
     // first or second stop
     let coord = [e.latlng.lng, e.latlng.lat]
-    this.stops.push(true)
     let marker = this.getMarker(coord, true)
     this.markers.push(marker)
     this.addLayer(marker)
@@ -105,7 +92,14 @@ export default class TransitEditorLayer extends L.LayerGroup {
 
       this.segments.push(segment)
       this.segmentLayers.push(segmentLayer)
+
+      // mark the intermediate coords (if any) as not control points
+      // -2: skip first coord (which is duplicate of last coord of previous segment)
+      for (let i = 0; i < segment.geometry.coordinates.length - 2; i++) this.controlPoints.push(false)
+      this.controlPoints.push(true)
     }
+    // if this is the first click, it is a control point.
+    else this.controlPoints.push(true)
   }
 
   /** handle dragging a marker */
@@ -115,7 +109,6 @@ export default class TransitEditorLayer extends L.LayerGroup {
     let idx = this.markers.indexOf(marker)
 
     console.log(`dragged marker ${idx} to ${marker.getLatLng()}`)
-
 
     if (idx === -1) {
       console.log('dragged marker not in array')
@@ -142,9 +135,9 @@ export default class TransitEditorLayer extends L.LayerGroup {
   }
 
   /** get a marker for a stop or a control point */
-  getMarker ([lng, lat], isStop) {
+  getMarker ([lng, lat]) {
     console.log(`created marker at ${lat}, ${lng}`)
-    let marker = L.marker(L.latLng(lat, lng), { draggable: true, icon: isStop ? stopIcon : controlPointIcon })
+    let marker = L.marker(L.latLng(lat, lng), { draggable: true, icon: controlPointIcon })
     marker.on('dragend', this.handleDragEnd)
     return marker
   }
