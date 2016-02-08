@@ -31,12 +31,17 @@ export default class TransitEditorLayer extends L.LayerGroup {
       throw new Error('allegedly parallel control point and coordinate arrays are not the same length!')
     }
 
+    this.handleMapClick = this.handleMapClick.bind(this)
+    this.handleDragEnd = this.handleDragEnd.bind(this)
+    this.handleMouseDown = this.handleMouseDown.bind(this)
+    this.handleMouseUp = this.handleMouseUp.bind(this)
+    this.handleMarkerClick = this.handleMarkerClick.bind(this)
+    this.handleMarkerDoubleClick = this.handleMarkerDoubleClick.bind(this)
+
     // state: what segment is currently being dragged
     this.draggingSegment = -1
     // whether new points are added at the end or the beginning of the geometry
     this.extendFromEnd = true
-
-    this.controlPoints = controlPoints
 
     this.segments = []
     this.segmentLayers = []
@@ -49,10 +54,11 @@ export default class TransitEditorLayer extends L.LayerGroup {
 
       // add the first marker
       let marker = this.getMarker(geometry.coordinates[0])
+      this.addLayer(marker)
       this.markers.push(marker)
 
       // split up the geometry into constituent pieces
-      while (coordIdx < this.controlPoints.length) {
+      while (coordIdx < controlPoints.length) {
         while (!controlPoints[coordIdx]) coordIdx++
 
         // include the last coordinate in the string so it goes all the way to the control point
@@ -61,18 +67,15 @@ export default class TransitEditorLayer extends L.LayerGroup {
         let segmentLayer = this.getSegmentLayer(segment)
         this.segmentLayers.push(segmentLayer)
         this.addLayer(segmentLayer)
+        startCoordIdx = coordIdx
 
         // add the stop marker at the end of this segment
-        this.markers.push(this.getMarker(geometry.getMarker(geometry.coordinates[coordIdx])))
+        let endMarker = this.getMarker(geometry.coordinates[coordIdx])
+        this.markers.push(endMarker)
+        this.addLayer(endMarker)
+        coordIdx++
       }
     }
-
-    this.handleMapClick = this.handleMapClick.bind(this)
-    this.handleDragEnd = this.handleDragEnd.bind(this)
-    this.handleMouseDown = this.handleMouseDown.bind(this)
-    this.handleMouseUp = this.handleMouseUp.bind(this)
-    this.handleMarkerClick = this.handleMarkerClick.bind(this)
-    this.handleMarkerDoubleClick = this.handleMarkerDoubleClick.bind(this)
   }
 
   addTo (map) {
@@ -281,17 +284,14 @@ export default class TransitEditorLayer extends L.LayerGroup {
   getModification () {
     // merge all of the segments together
     let coords = []
-    let stops = []
     let controlPoints = []
 
     this.segments.forEach((s, sidx, segments) => {
       // drop the last coordinate to avoid duplicates
       s.geometry.coordinates.slice(0, -1)
-        .forEach((c, cidx, coords) => {
+        .forEach((c, cidx) => {
           coords.push(c)
-          // first coordinate of segment is always control point, may be stop as well
           controlPoints.push(cidx === 0)
-          stops.push(cidx === 0 ? stops[sidx] : false)
         })
     })
 
@@ -299,12 +299,10 @@ export default class TransitEditorLayer extends L.LayerGroup {
     let lastCoord = this.segments.slice(-1)[0].geometry.coordinates.slice(-1)[0]
     coords.push(lastCoord)
     controlPoints.push(true)
-    stops.push(stops.slice(-1)[0])
 
     return {
       geometry: linestring(coords).geometry,
-      controlPoints,
-      stops
+      controlPoints
     }
   }
 }
