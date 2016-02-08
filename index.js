@@ -122,7 +122,9 @@ export default class TransitEditorLayer extends L.LayerGroup {
       let segment = this.getSegment([prevLatLng.lng, prevLatLng.lat], [latLng.lng, latLng.lat])
       this.segments[idx - 1] = segment
       this.removeLayer(this.segmentLayers[idx - 1])
-      this.segmentLayers[idx - 1] = L.geoJson(segment)
+      let segmentLayer = L.geoJson(segment)
+      this.segmentLayers[idx - 1] = segmentLayer
+      this.addLayer(segmentLayer)
     }
 
     if (idx < this.markers.length - 1) {
@@ -130,7 +132,9 @@ export default class TransitEditorLayer extends L.LayerGroup {
       let segment = this.getSegment([latLng.lng, latLng.lat], [nextLatLng.lng, nextLatLng.lat])
       this.segments[idx] = segment
       this.removeLayer(this.segmentLayers[idx])
-      this.segmentLayers[idx] = L.geoJson(segment)
+      let segmentLayer = L.geoJson(segment)
+      this.segmentLayers[idx] = segmentLayer
+      this.addLayer(segmentLayer)
     }
   }
 
