@@ -345,7 +345,7 @@ export default class TransitEditorLayer extends L.LayerGroup {
     return {
       geometry: linestring(coords).geometry,
       controlPoints,
-      stops
+      stops: this.stops
     }
   }
 }
