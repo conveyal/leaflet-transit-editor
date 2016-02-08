@@ -72,6 +72,7 @@ export default class TransitEditorLayer extends L.LayerGroup {
     this.handleMouseDown = this.handleMouseDown.bind(this)
     this.handleMouseUp = this.handleMouseUp.bind(this)
     this.handleMarkerClick = this.handleMarkerClick.bind(this)
+    this.handleMarkerDoubleClick = this.handleMarkerDoubleClick.bind(this)
   }
 
   addTo (map) {
@@ -213,12 +214,53 @@ export default class TransitEditorLayer extends L.LayerGroup {
     else if (index === this.markers.length - 1) this.extendFromEnd = true
   }
 
+  /** handle double clicking on a marker (remove it) */
+  handleMarkerDoubleClick (e) {
+    let idx = this.markers.indexOf(e.target)
+
+    if (idx < 0) {
+      console.warn('double clicked on marker not in array')
+      return
+    }
+
+    if (idx === 0) {
+      // special case: marker at start
+      this.removeLayer(this.markers.splice(0, 1)[0])
+      this.segments.splice(0, 1)
+      this.removeLayer(this.segmentLayers.splice(0, 1)[0])
+    } else if (idx === this.markers.length - 1) {
+      this.removeLayer(this.markers.splice(idx, 1)[0])
+      this.segments.splice(idx - 1, 1)
+      this.removeLayer(this.segmentLayers.splice(idx - 1, 1)[0])
+    }
+    else {
+      // in the middle
+      let prevLatLng = this.markers[idx - 1].getLatLng()
+      let prevCoord = [prevLatLng.lng, prevLatLng.lat]
+
+      // markers are always one item longer than segments, no need to be concerned about overflow here
+      let nextLatLng = this.markers[idx + 1].getLatLng()
+      let nextCoord = [nextLatLng.lng, nextLatLng.lat]
+
+      let segment = this.getSegment(prevCoord, nextCoord)
+      // replace the segment before and the segment after
+      this.segments.splice(idx - 1, 2, segment)
+      let segmentLayer = this.getSegmentLayer(segment)
+      this.addLayer(segmentLayer)
+      this.segmentLayers.splice(idx - 1, 2, segmentLayer)
+        .forEach(l => this.removeLayer(l))
+
+      this.removeLayer(this.markers.splice(idx, 1)[0])
+    }
+  }
+
   /** get a marker for a stop or a control point */
   getMarker ([lng, lat]) {
     console.log(`created marker at ${lat}, ${lng}`)
     let marker = L.marker(L.latLng(lat, lng), { draggable: true, icon: controlPointIcon })
     marker.on('dragend', this.handleDragEnd)
     marker.on('click', this.handleMarkerClick)
+    marker.on('dblclick', this.handleMarkerDoubleClick)
     return marker
   }
 
