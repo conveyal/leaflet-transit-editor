@@ -10,6 +10,8 @@
 
 import L from 'leaflet'
 import linestring from 'turf-linestring'
+import distance from 'turf-distance'
+import point from 'turf-point'
 
 /** simple circle marker for control points */
 const controlPointIcon = L.icon({
@@ -18,6 +20,8 @@ const controlPointIcon = L.icon({
   iconSize: [24, 24],
   iconAnchor: [12, 12]
 })
+
+const stopIcon = L.divIcon()
 
 export default class TransitEditorLayer extends L.LayerGroup {
   /**
@@ -76,6 +80,8 @@ export default class TransitEditorLayer extends L.LayerGroup {
         coordIdx++
       }
     }
+
+    this.updateStopLocations()
   }
 
   addTo (map) {
@@ -125,6 +131,8 @@ export default class TransitEditorLayer extends L.LayerGroup {
       this.segments.unshift(segment)
       this.segmentLayers.unshift(segmentLayer)
     }
+
+    this.updateStopLocations()
   }
 
   /** handle a mousedown (drag start) on a segment */
@@ -171,6 +179,7 @@ export default class TransitEditorLayer extends L.LayerGroup {
     this.removeLayer(oldSegLayer[0])
 
     this.draggingSegment = -1
+    this.updateStopLocations()
   }
 
   /** handle dragging a marker */
@@ -207,6 +216,8 @@ export default class TransitEditorLayer extends L.LayerGroup {
       this.segmentLayers[idx] = segmentLayer
       this.addLayer(segmentLayer)
     }
+
+    this.updateStopLocations()
   }
 
   /** if you click on the first or last marker, it selects which end to extend from */
@@ -235,8 +246,7 @@ export default class TransitEditorLayer extends L.LayerGroup {
       this.removeLayer(this.markers.splice(idx, 1)[0])
       this.segments.splice(idx - 1, 1)
       this.removeLayer(this.segmentLayers.splice(idx - 1, 1)[0])
-    }
-    else {
+    } else {
       // in the middle
       let prevLatLng = this.markers[idx - 1].getLatLng()
       let prevCoord = [prevLatLng.lng, prevLatLng.lat]
@@ -280,6 +290,38 @@ export default class TransitEditorLayer extends L.LayerGroup {
     return layer
   }
 
+  /** update the locations of stops along the route */
+  updateStopLocations () {
+    if (this.stopMarkers) this.stopMarkers.forEach(m => this.removeLayer(m))
+
+    this.stops = []
+    this.stopMarkers = []
+
+    let total = 0
+    let next = 0
+    this.segments.forEach(s => {
+      for (let line = 0; line < s.geometry.coordinates.length - 1; line++) {
+        let lengthThisLine = distance(point(s.geometry.coordinates[line]), point(s.geometry.coordinates[line + 1]), 'kilometers')
+        while (next < total + lengthThisLine) {
+          // make a stop at the appropriate place along the line
+          // NB using loop so that multiple stops are created on long straight segments
+          // e.g. someone might want to model the https://en.wikipedia.org/wiki/Indian_Pacific
+          let seg = next - total
+          let frac = seg / lengthThisLine
+          let lng = s.geometry.coordinates[line][0] + frac * (s.geometry.coordinates[line + 1][0] - s.geometry.coordinates[line][0])
+          let lat = s.geometry.coordinates[line][1] + frac * (s.geometry.coordinates[line + 1][1] - s.geometry.coordinates[line][1])
+          this.stops.push(point([lng, lat]))
+          let marker = L.marker(L.latLng(lat, lng), { icon: stopIcon })
+          this.addLayer(marker)
+          this.stopMarkers.push(marker)
+          next += 0.4 // 400m spacing FIXME don't hardwire this here
+        }
+
+        total += lengthThisLine
+      }
+    })
+  }
+
   /** return the geometry of the modification, as well as the stop and control point indices */
   getModification () {
     // merge all of the segments together
@@ -302,7 +344,8 @@ export default class TransitEditorLayer extends L.LayerGroup {
 
     return {
       geometry: linestring(coords).geometry,
-      controlPoints
+      controlPoints,
+      stops
     }
   }
 }
