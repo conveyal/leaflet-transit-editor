@@ -33,6 +33,8 @@ export default class TransitEditorLayer extends L.LayerGroup {
 
     // state: what segment is currently being dragged
     this.draggingSegment = -1
+    // whether new points are added at the end or the beginning of the geometry
+    this.extendFromEnd = true
 
     this.controlPoints = controlPoints
 
@@ -69,6 +71,7 @@ export default class TransitEditorLayer extends L.LayerGroup {
     this.handleDragEnd = this.handleDragEnd.bind(this)
     this.handleMouseDown = this.handleMouseDown.bind(this)
     this.handleMouseUp = this.handleMouseUp.bind(this)
+    this.handleMarkerClick = this.handleMarkerClick.bind(this)
   }
 
   addTo (map) {
@@ -88,27 +91,36 @@ export default class TransitEditorLayer extends L.LayerGroup {
     // first or second stop
     let coord = [e.latlng.lng, e.latlng.lat]
     let marker = this.getMarker(coord, true)
-    this.markers.push(marker)
     this.addLayer(marker)
 
-    if (this.markers.length > 1) {
-      let prevLatLng = this.markers[this.markers.length - 2].getLatLng()
+    if (this.markers.length === 0) {
+      this.markers.push(marker)
+      return // first stop, not making a segment
+    }
+
+    if (this.extendFromEnd) {
+      let prevLatLng = this.markers[this.markers.length - 1].getLatLng()
       let prevCoord = [prevLatLng.lng, prevLatLng.lat]
       let segment = this.getSegment(prevCoord, coord)
       let segmentLayer = this.getSegmentLayer(segment)
 
       this.addLayer(segmentLayer)
 
+      this.markers.push(marker)
       this.segments.push(segment)
       this.segmentLayers.push(segmentLayer)
+    } else {
+      let nextLatLng = this.markers[0].getLatLng()
+      let nextCoord = [nextLatLng.lng, nextLatLng.lat]
+      let segment = this.getSegment(coord, nextCoord)
+      let segmentLayer = this.getSegmentLayer(segment)
 
-      // mark the intermediate coords (if any) as not control points
-      // -2: skip first coord (which is duplicate of last coord of previous segment)
-      for (let i = 0; i < segment.geometry.coordinates.length - 2; i++) this.controlPoints.push(false)
-      this.controlPoints.push(true)
+      this.addLayer(segmentLayer)
+
+      this.markers.unshift(marker)
+      this.segments.unshift(segment)
+      this.segmentLayers.unshift(segmentLayer)
     }
-    // if this is the first click, it is a control point.
-    else this.controlPoints.push(true)
   }
 
   /** handle a mousedown (drag start) on a segment */
@@ -147,7 +159,7 @@ export default class TransitEditorLayer extends L.LayerGroup {
     this.markers.splice(this.draggingSegment + 1, 0, marker)
     this.addLayer(l0)
     this.addLayer(l1)
-    
+
     // remove old segment and add two new
     // insert two new segments *in place of* existing segment
     this.segments.splice(this.draggingSegment, 1, s0, s1)
@@ -193,11 +205,20 @@ export default class TransitEditorLayer extends L.LayerGroup {
     }
   }
 
+  /** if you click on the first or last marker, it selects which end to extend from */
+  handleMarkerClick (e) {
+    let index = this.markers.indexOf(e.target)
+
+    if (index === 0) this.extendFromEnd = false
+    else if (index === this.markers.length - 1) this.extendFromEnd = true
+  }
+
   /** get a marker for a stop or a control point */
   getMarker ([lng, lat]) {
     console.log(`created marker at ${lat}, ${lng}`)
     let marker = L.marker(L.latLng(lat, lng), { draggable: true, icon: controlPointIcon })
     marker.on('dragend', this.handleDragEnd)
+    marker.on('click', this.handleMarkerClick)
     return marker
   }
 
