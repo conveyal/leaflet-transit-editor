@@ -12,7 +12,7 @@
     "transform": "babelify"
   },
   "scripts": {
-    "prepublish": "babel index.js > build/index.js",
+    "prepublish": "babel lib --out-dir build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
