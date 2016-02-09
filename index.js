@@ -265,6 +265,8 @@ export default class TransitEditorLayer extends L.LayerGroup {
 
       this.removeLayer(this.markers.splice(idx, 1)[0])
     }
+
+    this.updateStopLocations()
   }
 
   /** get a marker for a stop or a control point */
