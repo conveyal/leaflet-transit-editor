@@ -1,6 +1,6 @@
 {
   "name": "leaflet-transit-editor",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Edit transit lines on a leaflet map.",
   "main": "lib/index.js",
   "babel": {
