@@ -1,8 +1,8 @@
 {
   "name": "leaflet-transit-editor",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Edit transit lines on a leaflet map.",
-  "main": "lib/index.js",
+  "main": "./build/index",
   "babel": {
     "presets": [
       "es2015",
@@ -42,5 +42,8 @@
   },
   "peerDependencies": {
     "leaflet": "^0.7.7"
+  },
+  "standard": {
+    "parser": "babel-eslint"
   }
 }
