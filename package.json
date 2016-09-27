@@ -41,7 +41,7 @@
     "turf-linestring": "^1.0.2"
   },
   "peerDependencies": {
-    "leaflet": "^0.7.7"
+    "leaflet": "^1.0.0"
   },
   "standard": {
     "parser": "babel-eslint"
