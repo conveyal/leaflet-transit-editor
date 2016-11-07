@@ -35,7 +35,7 @@
     "browserify": "^13.1.0"
   },
   "dependencies": {
-    "debug": "^2.2.0",
+    "debug": "^2.3.0",
     "turf-line-distance": "^3.0.12",
     "turf-line-slice": "^3.0.12",
     "turf-linestring": "^1.0.2"
